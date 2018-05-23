@@ -1,0 +1,15 @@
+img{margin:5px;float:left;}
+.hidden,div *{display:none;}
+.video{
+  background:lightgray;
+  border:5px solid lightgray;
+  border-radius:10px;
+  float:left;
+  margin:5px;
+  text-align:center;
+  max-width: 45%;
+}
+a:visited{color:lightgray;}
+input{width:6em;}
+li,button{margin:.25em;}
+.title,a,div[collapse=no] *{display:inline;}
