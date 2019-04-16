@@ -1,6 +1,7 @@
 var DURATIONFIELDSFLAGS=['s','m','h'];
 var DURATIONFIELDS=[];
 var MAXVIDEOS=15000; //baseline is loading in 30 second
+var FILTERS=['duration','dislikes','likes'];
 
 var totalduration=0;
 var descriptions=[];
@@ -16,6 +17,35 @@ function retrieveattribute(element,name){
 function integerattribute(element,attribute){
   return parseInt(retrieveattribute(element,attribute));
 }
+function checkranges(link){
+  for(var i=0;i<FILTERS.length;i++){
+    var f=FILTERS[i];
+    var value;
+    if(f=='duration'){
+      value=parseFloat(retrieveattribute(link,'duration'))/60;
+    } else{
+      value=integerattribute(link,f);
+    }
+    if(!(parsefilter('min'+f)<=value&&value<=parsefilter('max'+f))){
+      return false;
+    }
+  }
+  return true;
+}
+function checkquery(link){
+  var html=link.innerHTML.toLowerCase();
+  var terms=document.querySelector('#filterquery').value.trim();
+  if(!terms){
+    return true;
+  }
+  terms=terms.toLowerCase().split('\n');
+  for(var i=0;i<terms.length;i++){
+    if(html.indexOf(terms[i].trim())>=0){
+      return false;
+    }
+  }
+  return true;
+}
 function filter(){
   var videos=document.querySelector('#videos');
   var videosparent=videos.parentNode;
@@ -23,14 +53,7 @@ function filter(){
   var links=videos.querySelectorAll('.video');
   for (var i=0;i<links.length;i++){
     var link=links[i];
-    var duration=parseFloat(retrieveattribute(link,'duration'))/60;
-    var dislikes=integerattribute(link,'dislikes');
-    var likes=integerattribute(link,'likes');
-    link.style['display']=
-      parsefilter('min')<=duration&&duration<=parsefilter('max')&&
-      parsefilter('mindislikes')<=dislikes&&dislikes<=parsefilter('maxdislikes')&&
-      parsefilter('minlikes')<=likes&&likes<=parsefilter('maxlikes')
-      ?'table-row':'none';
+    link.style['display']=checkranges(link)&&checkquery(link)?'table-row':'none';
   }
   videosparent.appendChild(videos);
 }
@@ -93,6 +116,54 @@ function createFullElement(tag,parent,content){
   element.outerHTML=content;
   return element;
 }
+function detach(){
+  var style=document.querySelector('#querybox').style;
+  style['position']='fixed';
+  style['right']='1em';
+  style['top']='1em';
+  document.querySelector('#querybox button').style['display']='block';
+}
+function start(){
+  var extra=document.body.getAttribute('extrafilters');
+  if(extra){
+    extra=extra.split(' ');
+    for(var i=0;i<extra.length;i++){
+      var newfilter=extra[i];
+      FILTERS.push(newfilter);
+      var li=document.createElement('li');
+      li.innerHTML='<input value="0" id="min'+newfilter+'"/> and \
+        <input value="99999999" id="max'+newfilter+'"/> '+newfilter;
+      document.querySelector('ul').appendChild(li);
+    }
+  }
+  filter();
+}
+//https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
+function shuffle(array) { 
+  var currentIndex = array.length, temporaryValue, randomIndex;
+  while (0 !== currentIndex) {
+    // Pick a remaining element...
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex -= 1;
+    // And swap it with the current element.
+    temporaryValue = array[currentIndex];
+    array[currentIndex] = array[randomIndex];
+    array[randomIndex] = temporaryValue;
+  }
+  return array;
+}
+function pick(){
+  let videos=shuffle(Array.from(
+      document.querySelectorAll('.video')));
+  for(let v of videos){
+    if(v.style.display=='none') continue;
+    if(v.getAttribute('collapse')=='no') continue;
+    v.querySelector('a').click();
+    v.scrollIntoView();
+    return;
+  }
+  alert('No eligible videos left. Try broadening your filters.');
+}
 
 for (var i=0;i<DURATIONFIELDSFLAGS.length;i++){
   var flag=DURATIONFIELDSFLAGS[i];
@@ -111,15 +182,23 @@ if (removed>0){
 }
 html.push('Show videos between:\
   <ul>\
-    <li><input value="0"\ id="min"/> and \
-    <input value="36000" id="max"/> minutes</li>\
+    <li><input value="0"\ id="minduration"/> and \
+    <input value="36000" id="maxduration"/> minutes</li>\
     <li><input value="1" id="minlikes"/> and \
     <input value="99999999" id="maxlikes"/> likes</li>\
     <li><input value="0" id="mindislikes"/> and \
     <input value="99999999" id="maxdislikes"/> dislikes</li>\
   </ul>\
+  Hide items containing the following terms (one per line):<br/>\
+  <div id="querybox">\
+    <textarea id="filterquery"></textarea>\
+    <br/><button onclick="filter()">Filter</button>\
+  </div>\
+  <br/>\
   <button onclick="filter()">Filter</button>\
-  <button onclick="expandall()">Expand all</button><br/>');
+  <button onclick="expandall()">Expand all</button>\
+  <button onclick="detach()">Detach filter box</button>\
+  <button onclick="pick()">Pick random</button>\<br/>');
 html.push('<span id="videos">');
 for (var i=0;i<ytuidata.length;i++){
   var item=ytuidata[i];
@@ -173,7 +252,7 @@ for (var i=0;i<ytuidata.length;i++){
 }
 html.push('</span>');
 document.body.innerHTML+=html.join('');
-document.body.onload=filter;
+document.body.onload=start;
 //collect garbage
 ytuidata=false; 
 html=false;

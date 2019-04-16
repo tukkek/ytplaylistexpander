@@ -9,7 +9,9 @@ img{margin:5px;float:left;}
   text-align:center;
   max-width: 45%;
 }
-a:visited{color:lightgray;}
+div[collapse=yes] a:visited{color:lightgray;}
 input{width:6em;}
 li,button{margin:.25em;}
 .title,a,div[collapse=no] *{display:inline;}
+#filterquery{margin:1em 0em .75em 0em;height:5em;display:block;width:30em;}
+#querybox button{display:none;}
