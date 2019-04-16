@@ -152,17 +152,13 @@ function shuffle(array) {
   }
   return array;
 }
-function pick(){
-  let videos=shuffle(Array.from(
-      document.querySelectorAll('.video')));
-  for(let v of videos){
-    if(v.style.display=='none') continue;
-    if(v.getAttribute('collapse')=='no') continue;
-    v.querySelector('a').click();
-    v.scrollIntoView();
-    return;
+function shufflevideos(){
+  let parent=document.querySelector('#videos');
+  let videos=document.querySelectorAll('.video');
+  for(let v of shuffle(Array.from(videos))){
+      parent.removeChild(v);
+      parent.appendChild(v);
   }
-  alert('No eligible videos left. Try broadening your filters.');
 }
 
 for (var i=0;i<DURATIONFIELDSFLAGS.length;i++){
@@ -198,7 +194,8 @@ html.push('Show videos between:\
   <button onclick="filter()">Filter</button>\
   <button onclick="expandall()">Expand all</button>\
   <button onclick="detach()">Detach filter box</button>\
-  <button onclick="pick()">Pick random</button>\<br/>');
+  <button onclick="shufflevideos()">Shuffle</button>\
+  <br/>');
 html.push('<span id="videos">');
 for (var i=0;i<ytuidata.length;i++){
   var item=ytuidata[i];
