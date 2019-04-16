@@ -1,25 +1,16 @@
 #!/usr/bin/python3
 import subprocess
 from googleapiclient.discovery import build
-from google_auth_oauthlib.flow import InstalledAppFlow
-from oauth2client.file import Storage
+from oauth2client import file, client, tools
+from httplib2 import Http
 
 def get_authenticated_service():
-  flow=InstalledAppFlow.from_client_secrets_file("client_secret.json", ['https://www.googleapis.com/auth/youtube.force-ssl'])
-  storage = Storage('credentials.storage')
-  credentials=storage.get()
-  if credentials==None:
-    credentials=flow.run_local_server(
-        host='localhost',
-        port=8080, 
-        authorization_prompt_message='Please visit this URL: {url}', 
-        success_message='The auth flow is complete; you may close this window.',
-        open_browser=True)
-    try:
-        storage.put(credentials)
-    except AttributeError as e:
-        pass #for some reason credentials doesn't have 
-  return build('youtube', 'v3', credentials = credentials)
+  store=file.Storage('credentials.json')
+  creds=store.get()
+  if not creds or creds.invalid:
+      flow=client.flow_from_clientsecrets('client_secret.json', ['https://www.googleapis.com/auth/youtube.force-ssl'])
+      creds=tools.run_flow(flow,store,tools.argparser.parse_args(args=[]))
+  return build('youtube','v3',http=creds.authorize(Http()))
 service=get_authenticated_service()
 
 DEBUG=False
