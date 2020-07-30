@@ -21,11 +21,7 @@ RELATEDRESULTS=9
 def pages(service,request,follow=True): #TODO return items
   i=0
   while request:
-    try:
-      response=request.execute()
-    except Exception as e:
-      print(e)
-      continue
+    response=request.execute()
     for item in response['items']:
       yield item
     if not follow:
@@ -50,19 +46,22 @@ def main(argv):
           break
     i=-1
     search=service.search()
-    for videoid in videosids: #finds relateds
-      relatedcount=0
+    for videoid in videosids:#find relateds
       i+=1
-      for related in pages(search,search.list(part='id',type='video',maxResults=RELATEDRESULTS,relatedToVideoId=videoid),follow=False):
-        relatedcount+=1
-        duplicate=False
-        related=related['id']['videoId']
-        for avoid in [relatedids,videosids]:
-          if related in avoid:
-            duplicate=True
-        if not duplicate:
-          relatedids.append(related)
-      print('relateds '+str(int(100*i/(len(videosids))))+'% '+str(relatedcount)+' found')
+      try:
+        relatedcount=0
+        for related in pages(search,search.list(part='id',type='video',maxResults=RELATEDRESULTS,relatedToVideoId=videoid),follow=False):
+          relatedcount+=1
+          duplicate=False
+          related=related['id']['videoId']
+          for avoid in [relatedids,videosids]:
+            if related in avoid:
+              duplicate=True
+          if not duplicate:
+            relatedids.append(related)
+        print('relateds '+str(int(100*i/(len(videosids))))+'% '+str(relatedcount)+' found')
+      except Exception as e:#error 404, presumably if video was deleted/privated
+        print(e)
     relateds=[]
     requests=math.ceil(len(relatedids)/float(MAXRESULTS))
     nrequests=0
